@@ -509,7 +509,7 @@ class TimesheetApp:
                 tlembur=""
 
             data = {
-                "nama": "Dummy",
+                "nama": "Refia Karsista",
                 "jam_mulai_1": jm1,
                 "jam_selesai_1": js1,
                 "jam_mulai_2": jm2,
@@ -526,7 +526,15 @@ class TimesheetApp:
             self.gs.write_daily_sheet(d, data)
 
         conn.close()
-        messagebox.showinfo("OK", "Sync Google Sheet selesai.")
+        try:
+            self.status.config(text="Syncing Google Sheet...")
+            self.root.update_idletasks()
+            ...
+            messagebox.showinfo("OK", "Sync Google Sheet selesai.")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+        finally:
+            self.status.config(text="Ready")
 
 
 
