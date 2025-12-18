@@ -5,6 +5,34 @@ from datetime import datetime, date, timedelta
 import calendar
 from openpyxl import Workbook
 from google_sheet_sync import GoogleSheetSync
+import os
+import sys
+
+# =============================================================
+# RESOURCE PATH (FOR PYINSTALLER)
+# =============================================================
+def resource_path(relative_path):
+    """
+    Get absolute path to resource, works for dev and for PyInstaller exe
+    """
+    try:
+        base_path = sys._MEIPASS  # PyInstaller temp folder
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+CREDENTIALS_PATH = resource_path("credentials.json")
+
+# =============================================================
+# DATABASE PATH
+# =============================================================
+def app_data_path(filename):
+    base_dir = os.path.join(
+        os.environ.get("APPDATA") or os.path.expanduser("~"),
+        "TimesheetApp"
+    )
+    os.makedirs(base_dir, exist_ok=True)
+    return os.path.join(base_dir, filename)
 
 DB_PATH = "timesheet.db"
 
@@ -478,64 +506,79 @@ class TimesheetApp:
     # SYNC GOOGLE SHEET FINAL
     # =========================================================
     def sync_current_month(self):
-        if not self.gs:
-            self.gs = GoogleSheetSync("credentials.json", "AI META Timesheet")
-
-        month = int(self.month_cb.get())
-        year  = int(self.year_cb.get())
-        _, ndays = calendar.monthrange(year, month)
-
-        conn = sqlite3.connect(DB_PATH)
-        cur = conn.cursor()
-
-        for day in range(1, ndays+1):
-            d = date(year, month, day).strftime("%Y-%m-%d")
-
-            cur.execute("""
-                SELECT jam_mulai_1, jam_selesai_1, jam_mulai_2, jam_selesai_2,
-                       lembur_mulai, lembur_selesai,
-                       alasan_lembur, deskripsi_lembur, note
-                FROM entries WHERE entry_date=?
-            """, (d,))
-            row = cur.fetchone()
-
-            if row:
-                jm1,js1,jm2,js2,lm,ls,alasan,desk,note = row
-                tkerja = calc_total_kerja(jm1,js1,jm2,js2)
-                tlembur = calc_total_lembur(lm,ls)
-            else:
-                jm1=js1=jm2=js2=lm=ls=alasan=desk=note=""
-                tkerja=""
-                tlembur=""
-
-            data = {
-                "nama": "Refia Karsista",
-                "jam_mulai_1": jm1,
-                "jam_selesai_1": js1,
-                "jam_mulai_2": jm2,
-                "jam_selesai_2": js2,
-                "total_kerja": tkerja,
-                "lembur_mulai": lm,
-                "lembur_selesai": ls,
-                "total_lembur": tlembur,
-                "alasan_lembur": alasan,
-                "deskripsi_lembur": desk,
-                "catatan": note
-            }
-
-            self.gs.write_daily_sheet(d, data)
-
-        conn.close()
         try:
             self.status.config(text="Syncing Google Sheet...")
             self.root.update_idletasks()
-            ...
-            messagebox.showinfo("OK", "Sync Google Sheet selesai.")
+
+            if not self.gs:
+                self.gs = GoogleSheetSync(
+                    resource_path("credentials.json"),
+                    "AI META Timesheet"
+                )
+
+            month = int(self.month_cb.get())
+            year  = int(self.year_cb.get())
+            _, ndays = calendar.monthrange(year, month)
+
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+
+            for day in range(1, ndays + 1):
+                d = date(year, month, day).strftime("%Y-%m-%d")
+
+                cur.execute("""
+                    SELECT jam_mulai_1, jam_selesai_1,
+                        jam_mulai_2, jam_selesai_2,
+                        lembur_mulai, lembur_selesai,
+                        alasan_lembur, deskripsi_lembur, note
+                    FROM entries
+                    WHERE entry_date=?
+                """, (d,))
+                row = cur.fetchone()
+
+                if row:
+                    jm1, js1, jm2, js2, lm, ls, alasan, desk, note = row
+                    tkerja  = calc_total_kerja(jm1, js1, jm2, js2)
+                    tlembur = calc_total_lembur(lm, ls)
+                else:
+                    jm1 = js1 = jm2 = js2 = lm = ls = alasan = desk = note = ""
+                    tkerja = ""
+                    tlembur = ""
+
+                data = {
+                    "nama": "Refia Karsista",
+                    "jam_mulai_1": jm1,
+                    "jam_selesai_1": js1,
+                    "jam_mulai_2": jm2,
+                    "jam_selesai_2": js2,
+                    "total_kerja": tkerja,
+                    "lembur_mulai": lm,
+                    "lembur_selesai": ls,
+                    "total_lembur": tlembur,
+                    "alasan_lembur": alasan,
+                    "deskripsi_lembur": desk,
+                    "catatan": note,
+                }
+
+                self.status.config(text=f"Sync {d}...")
+                self.root.update_idletasks()
+
+                self.gs.write_daily_sheet(d, data)
+                time.sleep(1)  # to avoid rate limit
+
+            conn.close()
+            messagebox.showinfo(
+                "OK",
+                f"Sync Google Sheet berhasil ({month}/{year})"
+            )
+
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            import traceback
+            traceback.print_exc()
+            messagebox.showerror("ERROR", str(e))
+
         finally:
             self.status.config(text="Ready")
-
 
 
 # =============================================================
