@@ -47,5 +47,4 @@ class GoogleSheetSync:
         ]
 
         ws.clear()
-        for row in rows:
-            ws.append_row(row)
+        ws.update("A1", rows)

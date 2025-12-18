@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import sqlite3
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
+import time
 import calendar
 from openpyxl import Workbook
 from google_sheet_sync import GoogleSheetSync
