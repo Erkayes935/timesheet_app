@@ -442,7 +442,7 @@ class TimesheetApp:
             ws = wb.create_sheet(d)
             template = [
                 ["Identitas"],
-                ["Nama lengkap","Dummy"],
+                ["Nama lengkap","Refia Karsista"],
                 [],
                 ["Tanggal lembur", d],
                 [],

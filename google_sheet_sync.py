@@ -25,7 +25,7 @@ def write_daily_sheet(self, date_str: str, data: dict):
     ws = self.ensure_daily_sheet(date_str)
     rows = [
         ["Identitas"],
-        ["Nama lengkap", data.get("nama", "Dummy")],
+        ["Nama lengkap", data.get("nama", "Refia Karsista")],
         [],
         ["Tanggal lembur", date_str],
         [],
