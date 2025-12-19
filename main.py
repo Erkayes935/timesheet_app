@@ -9,6 +9,8 @@ from google_sheet_sync import GoogleSheetSync
 import os
 import sys
 
+DB_PATH = "timesheet.db"
+
 # =============================================================
 # RESOURCE PATH (FOR PYINSTALLER)
 # =============================================================
@@ -23,20 +25,6 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 CREDENTIALS_PATH = resource_path("credentials.json")
-
-# =============================================================
-# DATABASE PATH
-# =============================================================
-def app_data_path(filename):
-    base_dir = os.path.join(
-        os.environ.get("APPDATA") or os.path.expanduser("~"),
-        "TimesheetApp"
-    )
-    os.makedirs(base_dir, exist_ok=True)
-    return os.path.join(base_dir, filename)
-
-DB_PATH = "timesheet.db"
-
 
 # =============================================================
 # DATABASE PATCH
@@ -69,7 +57,6 @@ def ensure_db():
 
     conn.commit()
     conn.close()
-
 
 # =============================================================
 # UTILITAS WAKTU
